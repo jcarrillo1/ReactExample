@@ -2,6 +2,7 @@ $ = jQuery = require('jquery'); // two ways to reference jQuery
 
 var React = require('react'),
     Home = require('./components/homePage.jsx'),
+    Authors = require('./components/authors/authorPage.jsx'),
     About = require('./components/about/aboutPage.jsx'),
     ReactDOM = require('react-dom'),
     Header = require('./components/common/header.jsx');
@@ -18,10 +19,14 @@ var React = require('react'),
        render:function() {
            var Child;
            switch(this.props.route) {
+               case 'authors': 
+                   Child = Authors;
+                   break;
                case 'about':
                    Child = About;
                    break;
-               default: Child = Home;
+               default: 
+                   Child = Home;
            }
            return(
             <div>
