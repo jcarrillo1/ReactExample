@@ -16,6 +16,7 @@ var config = {
         // Looks for these files
         html: './src/*.html',
         js: './src/**/*.js',
+        images: './src/images/*',
         css: [
             './node_modules/bootstrap/dist/css/bootstrap.min.css',
             './node_modules/bootstrap/dist/css/bootstrap-theme.min.css'
@@ -69,6 +70,17 @@ gulp.task('css', function() {
         .pipe(gulp.dest(config.paths.dist + '/css'));
 });
 
+gulp.task('images', function() {
+    //Send all files to the the dist folder under the imates folder
+    gulp.src(config.paths.images)
+        .pipe(gulp.dest(config.paths.dist + '/images'))
+        .pipe(connect.reload());
+    
+    //This would be for a favicon
+    gulp.src('./src/images/topleft.png')
+        .pipe(gulp.dest(config.paths.dist));
+})
+
 //Figure out later what's wrong with the lint file or eslint
 //gulp.task('lint', function() {
 //	return gulp.src(config.paths.js)
@@ -88,4 +100,4 @@ gulp.task('watch', function() {
     
 //Run the tasks in this order
 //gulp.task('default', ['html', 'js', 'css', 'lint', 'open', 'watch']);
-gulp.task('default', ['html', 'js', 'css',  'open', 'watch']);
+gulp.task('default', ['html', 'js', 'css', 'images', 'open', 'watch']);

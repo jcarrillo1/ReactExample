@@ -29366,9 +29366,37 @@ module.exports = About;
 
 var React = require('react');
 
+// This will be the navigation bar for the app
+var Header = React.createClass({displayName: "Header",
+    render: function() {
+        return(
+            React.createElement("nav", {className: "navbar navbar-default"}, 
+                React.createElement("div", {className: "container-fluid"}, 
+                    React.createElement("a", {href: "/", className: "navbar-brand"}, 
+                        React.createElement("img", {src: "images/topleft.png"})
+                    ), 
+                    React.createElement("ul", {className: "nav navbar-nav"}, 
+                        React.createElement("li", null, React.createElement("a", {href: "/"}, "Home")), 
+                        React.createElement("li", null, React.createElement("a", {href: "/#about"}, "About"))
+                    )
+                )
+            )
+        );
+    }
+});
+
+module.exports = Header;
+
+},{"react":168}],171:[function(require,module,exports){
+"use strict";
+
+var React = require('react');
+
+// Home page
 var Home = React.createClass({displayName: "Home",
     render: function() {
         return(
+            // Uses jumbotron to display the current text. 
             React.createElement("div", {className: "jumbotron"}, 
                 React.createElement("h1", null, "React Example"), 
                 React.createElement("p", null, "Using react, reac router, and flux. ")
@@ -29379,16 +29407,23 @@ var Home = React.createClass({displayName: "Home",
 
 module.exports = Home;
 
-},{"react":168}],171:[function(require,module,exports){
+},{"react":168}],172:[function(require,module,exports){
 $ = jQuery = require('jquery'); // two ways to reference jQuery
 
 var React = require('react'),
     Home = require('./components/homePage.jsx'),
     About = require('./components/about/aboutPage.jsx'),
-    ReactDOM = require('react-dom');
+    ReactDOM = require('react-dom'),
+    Header = require('./components/common/header.jsx');
 
+// The following allows the use of use strict. Need to ask when use strict might be used
+// If at all in our instances and why it would be used in the first place, as well as
+// Why iife would be used. 
 (function(win) {
     "use strict";
+    // App demonstrates the use of routing
+    // However, there seems to be a different method employed on the 
+    // Atlas files for routing, however, react-route is still used. 
     var App = React.createClass({displayName: "App",
        render:function() {
            var Child;
@@ -29400,6 +29435,7 @@ var React = require('react'),
            }
            return(
             React.createElement("div", null, 
+               React.createElement(Header, null), 
                React.createElement(Child, null)
             )
            );
@@ -29416,4 +29452,4 @@ var React = require('react'),
     render();
 })(window);
 
-},{"./components/about/aboutPage.jsx":169,"./components/homePage.jsx":170,"jquery":1,"react":168,"react-dom":3}]},{},[171]);
+},{"./components/about/aboutPage.jsx":169,"./components/common/header.jsx":170,"./components/homePage.jsx":171,"jquery":1,"react":168,"react-dom":3}]},{},[172]);
