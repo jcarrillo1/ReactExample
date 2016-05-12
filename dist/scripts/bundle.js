@@ -48859,6 +48859,443 @@ module.exports = warning;
 module.exports = require('./lib/React');
 
 },{"./lib/React":70}],198:[function(require,module,exports){
+/*
+ * Toastr
+ * Copyright 2012-2015
+ * Authors: John Papa, Hans Fjällemark, and Tim Ferrell.
+ * All Rights Reserved.
+ * Use, reproduction, distribution, and modification of this code is subject to the terms and
+ * conditions of the MIT license, available at http://www.opensource.org/licenses/mit-license.php
+ *
+ * ARIA Support: Greta Krafsig
+ *
+ * Project: https://github.com/CodeSeven/toastr
+ */
+/* global define */
+; (function (define) {
+    define(['jquery'], function ($) {
+        return (function () {
+            var $container;
+            var listener;
+            var toastId = 0;
+            var toastType = {
+                error: 'error',
+                info: 'info',
+                success: 'success',
+                warning: 'warning'
+            };
+
+            var toastr = {
+                clear: clear,
+                remove: remove,
+                error: error,
+                getContainer: getContainer,
+                info: info,
+                options: {},
+                subscribe: subscribe,
+                success: success,
+                version: '2.1.2',
+                warning: warning
+            };
+
+            var previousToast;
+
+            return toastr;
+
+            ////////////////
+
+            function error(message, title, optionsOverride) {
+                return notify({
+                    type: toastType.error,
+                    iconClass: getOptions().iconClasses.error,
+                    message: message,
+                    optionsOverride: optionsOverride,
+                    title: title
+                });
+            }
+
+            function getContainer(options, create) {
+                if (!options) { options = getOptions(); }
+                $container = $('#' + options.containerId);
+                if ($container.length) {
+                    return $container;
+                }
+                if (create) {
+                    $container = createContainer(options);
+                }
+                return $container;
+            }
+
+            function info(message, title, optionsOverride) {
+                return notify({
+                    type: toastType.info,
+                    iconClass: getOptions().iconClasses.info,
+                    message: message,
+                    optionsOverride: optionsOverride,
+                    title: title
+                });
+            }
+
+            function subscribe(callback) {
+                listener = callback;
+            }
+
+            function success(message, title, optionsOverride) {
+                return notify({
+                    type: toastType.success,
+                    iconClass: getOptions().iconClasses.success,
+                    message: message,
+                    optionsOverride: optionsOverride,
+                    title: title
+                });
+            }
+
+            function warning(message, title, optionsOverride) {
+                return notify({
+                    type: toastType.warning,
+                    iconClass: getOptions().iconClasses.warning,
+                    message: message,
+                    optionsOverride: optionsOverride,
+                    title: title
+                });
+            }
+
+            function clear($toastElement, clearOptions) {
+                var options = getOptions();
+                if (!$container) { getContainer(options); }
+                if (!clearToast($toastElement, options, clearOptions)) {
+                    clearContainer(options);
+                }
+            }
+
+            function remove($toastElement) {
+                var options = getOptions();
+                if (!$container) { getContainer(options); }
+                if ($toastElement && $(':focus', $toastElement).length === 0) {
+                    removeToast($toastElement);
+                    return;
+                }
+                if ($container.children().length) {
+                    $container.remove();
+                }
+            }
+
+            // internal functions
+
+            function clearContainer (options) {
+                var toastsToClear = $container.children();
+                for (var i = toastsToClear.length - 1; i >= 0; i--) {
+                    clearToast($(toastsToClear[i]), options);
+                }
+            }
+
+            function clearToast ($toastElement, options, clearOptions) {
+                var force = clearOptions && clearOptions.force ? clearOptions.force : false;
+                if ($toastElement && (force || $(':focus', $toastElement).length === 0)) {
+                    $toastElement[options.hideMethod]({
+                        duration: options.hideDuration,
+                        easing: options.hideEasing,
+                        complete: function () { removeToast($toastElement); }
+                    });
+                    return true;
+                }
+                return false;
+            }
+
+            function createContainer(options) {
+                $container = $('<div/>')
+                    .attr('id', options.containerId)
+                    .addClass(options.positionClass)
+                    .attr('aria-live', 'polite')
+                    .attr('role', 'alert');
+
+                $container.appendTo($(options.target));
+                return $container;
+            }
+
+            function getDefaults() {
+                return {
+                    tapToDismiss: true,
+                    toastClass: 'toast',
+                    containerId: 'toast-container',
+                    debug: false,
+
+                    showMethod: 'fadeIn', //fadeIn, slideDown, and show are built into jQuery
+                    showDuration: 300,
+                    showEasing: 'swing', //swing and linear are built into jQuery
+                    onShown: undefined,
+                    hideMethod: 'fadeOut',
+                    hideDuration: 1000,
+                    hideEasing: 'swing',
+                    onHidden: undefined,
+                    closeMethod: false,
+                    closeDuration: false,
+                    closeEasing: false,
+
+                    extendedTimeOut: 1000,
+                    iconClasses: {
+                        error: 'toast-error',
+                        info: 'toast-info',
+                        success: 'toast-success',
+                        warning: 'toast-warning'
+                    },
+                    iconClass: 'toast-info',
+                    positionClass: 'toast-top-right',
+                    timeOut: 5000, // Set timeOut and extendedTimeOut to 0 to make it sticky
+                    titleClass: 'toast-title',
+                    messageClass: 'toast-message',
+                    escapeHtml: false,
+                    target: 'body',
+                    closeHtml: '<button type="button">&times;</button>',
+                    newestOnTop: true,
+                    preventDuplicates: false,
+                    progressBar: false
+                };
+            }
+
+            function publish(args) {
+                if (!listener) { return; }
+                listener(args);
+            }
+
+            function notify(map) {
+                var options = getOptions();
+                var iconClass = map.iconClass || options.iconClass;
+
+                if (typeof (map.optionsOverride) !== 'undefined') {
+                    options = $.extend(options, map.optionsOverride);
+                    iconClass = map.optionsOverride.iconClass || iconClass;
+                }
+
+                if (shouldExit(options, map)) { return; }
+
+                toastId++;
+
+                $container = getContainer(options, true);
+
+                var intervalId = null;
+                var $toastElement = $('<div/>');
+                var $titleElement = $('<div/>');
+                var $messageElement = $('<div/>');
+                var $progressElement = $('<div/>');
+                var $closeElement = $(options.closeHtml);
+                var progressBar = {
+                    intervalId: null,
+                    hideEta: null,
+                    maxHideTime: null
+                };
+                var response = {
+                    toastId: toastId,
+                    state: 'visible',
+                    startTime: new Date(),
+                    options: options,
+                    map: map
+                };
+
+                personalizeToast();
+
+                displayToast();
+
+                handleEvents();
+
+                publish(response);
+
+                if (options.debug && console) {
+                    console.log(response);
+                }
+
+                return $toastElement;
+
+                function escapeHtml(source) {
+                    if (source == null)
+                        source = "";
+
+                    return new String(source)
+                        .replace(/&/g, '&amp;')
+                        .replace(/"/g, '&quot;')
+                        .replace(/'/g, '&#39;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;');
+                }
+
+                function personalizeToast() {
+                    setIcon();
+                    setTitle();
+                    setMessage();
+                    setCloseButton();
+                    setProgressBar();
+                    setSequence();
+                }
+
+                function handleEvents() {
+                    $toastElement.hover(stickAround, delayedHideToast);
+                    if (!options.onclick && options.tapToDismiss) {
+                        $toastElement.click(hideToast);
+                    }
+
+                    if (options.closeButton && $closeElement) {
+                        $closeElement.click(function (event) {
+                            if (event.stopPropagation) {
+                                event.stopPropagation();
+                            } else if (event.cancelBubble !== undefined && event.cancelBubble !== true) {
+                                event.cancelBubble = true;
+                            }
+                            hideToast(true);
+                        });
+                    }
+
+                    if (options.onclick) {
+                        $toastElement.click(function (event) {
+                            options.onclick(event);
+                            hideToast();
+                        });
+                    }
+                }
+
+                function displayToast() {
+                    $toastElement.hide();
+
+                    $toastElement[options.showMethod](
+                        {duration: options.showDuration, easing: options.showEasing, complete: options.onShown}
+                    );
+
+                    if (options.timeOut > 0) {
+                        intervalId = setTimeout(hideToast, options.timeOut);
+                        progressBar.maxHideTime = parseFloat(options.timeOut);
+                        progressBar.hideEta = new Date().getTime() + progressBar.maxHideTime;
+                        if (options.progressBar) {
+                            progressBar.intervalId = setInterval(updateProgress, 10);
+                        }
+                    }
+                }
+
+                function setIcon() {
+                    if (map.iconClass) {
+                        $toastElement.addClass(options.toastClass).addClass(iconClass);
+                    }
+                }
+
+                function setSequence() {
+                    if (options.newestOnTop) {
+                        $container.prepend($toastElement);
+                    } else {
+                        $container.append($toastElement);
+                    }
+                }
+
+                function setTitle() {
+                    if (map.title) {
+                        $titleElement.append(!options.escapeHtml ? map.title : escapeHtml(map.title)).addClass(options.titleClass);
+                        $toastElement.append($titleElement);
+                    }
+                }
+
+                function setMessage() {
+                    if (map.message) {
+                        $messageElement.append(!options.escapeHtml ? map.message : escapeHtml(map.message)).addClass(options.messageClass);
+                        $toastElement.append($messageElement);
+                    }
+                }
+
+                function setCloseButton() {
+                    if (options.closeButton) {
+                        $closeElement.addClass('toast-close-button').attr('role', 'button');
+                        $toastElement.prepend($closeElement);
+                    }
+                }
+
+                function setProgressBar() {
+                    if (options.progressBar) {
+                        $progressElement.addClass('toast-progress');
+                        $toastElement.prepend($progressElement);
+                    }
+                }
+
+                function shouldExit(options, map) {
+                    if (options.preventDuplicates) {
+                        if (map.message === previousToast) {
+                            return true;
+                        } else {
+                            previousToast = map.message;
+                        }
+                    }
+                    return false;
+                }
+
+                function hideToast(override) {
+                    var method = override && options.closeMethod !== false ? options.closeMethod : options.hideMethod;
+                    var duration = override && options.closeDuration !== false ?
+                        options.closeDuration : options.hideDuration;
+                    var easing = override && options.closeEasing !== false ? options.closeEasing : options.hideEasing;
+                    if ($(':focus', $toastElement).length && !override) {
+                        return;
+                    }
+                    clearTimeout(progressBar.intervalId);
+                    return $toastElement[method]({
+                        duration: duration,
+                        easing: easing,
+                        complete: function () {
+                            removeToast($toastElement);
+                            if (options.onHidden && response.state !== 'hidden') {
+                                options.onHidden();
+                            }
+                            response.state = 'hidden';
+                            response.endTime = new Date();
+                            publish(response);
+                        }
+                    });
+                }
+
+                function delayedHideToast() {
+                    if (options.timeOut > 0 || options.extendedTimeOut > 0) {
+                        intervalId = setTimeout(hideToast, options.extendedTimeOut);
+                        progressBar.maxHideTime = parseFloat(options.extendedTimeOut);
+                        progressBar.hideEta = new Date().getTime() + progressBar.maxHideTime;
+                    }
+                }
+
+                function stickAround() {
+                    clearTimeout(intervalId);
+                    progressBar.hideEta = 0;
+                    $toastElement.stop(true, true)[options.showMethod](
+                        {duration: options.showDuration, easing: options.showEasing}
+                    );
+                }
+
+                function updateProgress() {
+                    var percentage = ((progressBar.hideEta - (new Date().getTime())) / progressBar.maxHideTime) * 100;
+                    $progressElement.width(percentage + '%');
+                }
+            }
+
+            function getOptions() {
+                return $.extend({}, getDefaults(), toastr.options);
+            }
+
+            function removeToast($toastElement) {
+                if (!$container) { $container = getContainer(); }
+                if ($toastElement.is(':visible')) {
+                    return;
+                }
+                $toastElement.remove();
+                $toastElement = null;
+                if ($container.children().length === 0) {
+                    $container.remove();
+                    previousToast = undefined;
+                }
+            }
+
+        })();
+    });
+}(typeof define === 'function' && define.amd ? define : function (deps, factory) {
+    if (typeof module !== 'undefined' && module.exports) { //Node
+        module.exports = factory(require('jquery'));
+    } else {
+        window.toastr = factory(window.jQuery);
+    }
+}));
+
+},{"jquery":1}],199:[function(require,module,exports){
 "use strict";
 
 //This file is mocking a web API by hitting hard coded data.
@@ -48910,7 +49347,7 @@ var AuthorApi = {
 
 module.exports = AuthorApi;
 
-},{"./authorData":199,"lodash":2}],199:[function(require,module,exports){
+},{"./authorData":200,"lodash":2}],200:[function(require,module,exports){
 module.exports = {
 	authors: 
 	[
@@ -48932,7 +49369,7 @@ module.exports = {
 	]
 };
 
-},{}],200:[function(require,module,exports){
+},{}],201:[function(require,module,exports){
 "use strict";
 
 var React = require('react');
@@ -48960,7 +49397,7 @@ var About = React.createClass({displayName: "About",
 
 module.exports = About;
 
-},{"react":197}],201:[function(require,module,exports){
+},{"react":197}],202:[function(require,module,exports){
 $ = jQuery = require('jquery');
 var React = require('react');
 var Header = require('./common/header.jsx');
@@ -48982,14 +49419,19 @@ var App = React.createClass({displayName: "App",
 });
 
 module.exports = App;
-},{"./common/header.jsx":207,"jquery":1,"react":197,"react-router":28}],202:[function(require,module,exports){
+},{"./common/header.jsx":208,"jquery":1,"react":197,"react-router":28}],203:[function(require,module,exports){
 "use strict";
 
 var React = require('react'),
     Input = require('../common/Input.jsx');
 
 var AuthorForm = React.createClass({displayName: "AuthorForm",
-
+    propTypes: {
+        author: React.PropTypes.object.isRequired,
+        onSave: React.PropTypes.func.isRequired,
+        onChange: React.PropTypes.func.isRequired,
+        error: React.PropTypes.object
+    },
 
     render: function() {
         return(
@@ -49000,24 +49442,32 @@ var AuthorForm = React.createClass({displayName: "AuthorForm",
                     name: "firstName", 
                     label: "First Name", 
                     onChange: this.props.onChange, 
-                    value: this.props.author.firstName}), 
+                    value: this.props.author.firstName, 
+                    errors: this.props.errors.firstName}), 
                 React.createElement(Input, {
                     name: "lastName", 
                     label: "Last Name", 
                     onChange: this.props.onChange, 
-                    value: this.props.author.lastName}), 
+                    value: this.props.author.lastName, 
+                    errors: this.props.errors.lastName}), 
 
-                React.createElement("input", {type: "submit", value: "Save", className: "btn btn-default"})
+                React.createElement("input", {
+                    type: "submit", 
+                    value: "Save", 
+                    className: "btn btn-default", 
+                    onClick: this.props.onSave})
             )
         );
     }
 });
 
 module.exports = AuthorForm;
-},{"../common/Input.jsx":206,"react":197}],203:[function(require,module,exports){
+},{"../common/Input.jsx":207,"react":197}],204:[function(require,module,exports){
 "use strict";
 
-var React = require('react');
+var React = require('react'),
+    Router = require('react-router'),
+    Link = Router.Link;
 
 var AuthorList = React.createClass({displayName: "AuthorList",
     propTypes: {
@@ -49029,7 +49479,7 @@ var AuthorList = React.createClass({displayName: "AuthorList",
         var createAuthorRow = function(author) {
             return (
                 React.createElement("tr", {key: author.id}, 
-                    React.createElement("td", null, React.createElement("a", {href: '/#authors/' + author.id}, author.id)), 
+                    React.createElement("td", null, React.createElement(Link, {to: "manageAuthor", params: {id: author.id}}, author.id)), 
                     React.createElement("td", null, author.firstName, " ", author.lastName)
                 )
             );
@@ -49052,7 +49502,7 @@ var AuthorList = React.createClass({displayName: "AuthorList",
 });
 
 module.exports = AuthorList;
-},{"react":197}],204:[function(require,module,exports){
+},{"react":197,"react-router":28}],205:[function(require,module,exports){
 "use strict";
 
 var React = require('react'),
@@ -49090,32 +49540,83 @@ var AuthorPage = React.createClass({displayName: "AuthorPage",
 });
 
 module.exports = AuthorPage;
-},{"../../api/authorApi":198,"./authorList.jsx":203,"react":197,"react-router":28}],205:[function(require,module,exports){
+},{"../../api/authorApi":199,"./authorList.jsx":204,"react":197,"react-router":28}],206:[function(require,module,exports){
 "use strict";
 
 var React = require('react'),
     Router = require('react-router'),
     AuthorForm = require('./authorForm.jsx'),
-    Link = Router.Link;
+    AuthorApi = require('../../api/authorApi'),
+    toastr = require('toastr');
 
 // Home page
 var AddAuthors = React.createClass({displayName: "AddAuthors",
+    mixins: [
+        Router.Navigation
+    ],
+    statics: {
+        willTransitionFrom: function(transition, component) {
+            if(component.state.dirty && ! confirm('Leave w/o saving?')) {
+                transition.abort();
+            }
+        }
+    },
     getInitialState: function() {
         return{
             author: {
                 id: '',
                 firstName: '',
                 lastName: ''
-            }
+
+            },
+            errors: {},
+            dirty: false
         };
     },
+    componentWillMount: function() {
+        var authorId = this.props.params.id; //From the path, the author id
+        if(authorId) {
+            //Get the author from the url and use the information
+            this.setState({author:AuthorApi.getAuthorById(authorId)});
+        }
 
+    },
 
     setAuthorState: function(event) {
+        this.setState({dirty: true});
         var field = event.target.name;
         var value = event.target.value;
         this.state.author[field] = value;
         return this.setState({author:this.state.author});
+    },
+
+    authorFormIsValid: function() {
+        var formIsValid = true;
+        this.state.errors = {};
+
+        if(this.state.author.firstName.length < 2) {
+            formIsValid = false;
+            this.state.errors.firstName = 'First name is less than 2 characters.';
+        }
+        if(this.state.author.lastName.length < 2) {
+            formIsValid = false;
+            this.state.errors.lastName = 'Last Name is less than 2 characters.';
+        }
+        this.setState({errors: this.state.errors});
+        return formIsValid;
+    },
+
+    saveAuthor: function(e) {
+        e.preventDefault();
+
+        if(!this.authorFormIsValid()) {
+            return;
+        }
+
+        AuthorApi.saveAuthor(this.state.author);
+        this.setState({dirty: false});
+        toastr.success('Author has been saved');
+        this.transitionTo('authors');
     },
 
     render: function() {
@@ -49124,14 +49625,16 @@ var AddAuthors = React.createClass({displayName: "AddAuthors",
             React.createElement("div", null, 
                 React.createElement(AuthorForm, {
                     author: this.state.author, 
-                    onChange: this.setAuthorState})
+                    onChange: this.setAuthorState, 
+                    onSave: this.saveAuthor, 
+                    errors: this.state.errors})
             )
         );
     }
 });
 
 module.exports = AddAuthors;
-},{"./authorForm.jsx":202,"react":197,"react-router":28}],206:[function(require,module,exports){
+},{"../../api/authorApi":199,"./authorForm.jsx":203,"react":197,"react-router":28,"toastr":198}],207:[function(require,module,exports){
 "use strict";
 {/*good reusable components*/}
 var React = require('react');
@@ -49163,7 +49666,7 @@ var Input = React.createClass({displayName: "Input",
                         ref: this.props.name, 
                         value: this.props.value, 
                         onChange: this.props.onChange}), 
-                    React.createElement("div", {className: "input"}, this.props.error)
+                    React.createElement("div", {className: "input"}, this.props.errors)
                 )
             )
         );
@@ -49171,7 +49674,7 @@ var Input = React.createClass({displayName: "Input",
 });
 
 module.exports = Input;
-},{"react":197}],207:[function(require,module,exports){
+},{"react":197}],208:[function(require,module,exports){
 "use strict";
 
 var React = require('react'),
@@ -49200,7 +49703,7 @@ var Header = React.createClass({displayName: "Header",
 });
 
 module.exports = Header;
-},{"react":197,"react-router":28}],208:[function(require,module,exports){
+},{"react":197,"react-router":28}],209:[function(require,module,exports){
 "use strict";
 
 var React = require('react'),
@@ -49222,7 +49725,7 @@ var Home = React.createClass({displayName: "Home",
 });
 
 module.exports = Home;
-},{"react":197,"react-router":28}],209:[function(require,module,exports){
+},{"react":197,"react-router":28}],210:[function(require,module,exports){
 var React = require('react'),
     Router = require('react-router'),
     Link = Router.Link;
@@ -49241,7 +49744,7 @@ var NotFoundPage = React.createClass({displayName: "NotFoundPage",
 });
 
 module.exports = NotFoundPage;
-},{"react":197,"react-router":28}],210:[function(require,module,exports){
+},{"react":197,"react-router":28}],211:[function(require,module,exports){
  // two ways to reference jQuery
 var React = require('react'),
     Router = require('react-router'),
@@ -49250,7 +49753,7 @@ var React = require('react'),
 Router.run(routes, function(Handler) {
     React.render(React.createElement(Handler, null), document.getElementById('app'));
 });
-},{"./routes":211,"react":197,"react-router":28}],211:[function(require,module,exports){
+},{"./routes":212,"react":197,"react-router":28}],212:[function(require,module,exports){
 "use strict";
 
 var React = require('react'),
@@ -49265,10 +49768,11 @@ var routes = (
     React.createElement(DefaultRoute, {handler: require('./components/homePage.jsx')}), 
     React.createElement(Route, {name: "authors", handler: require('./components/authors/authorPage.jsx')}), 
     React.createElement(Route, {name: "addAuthor", path: "author", handler: require('./components/authors/manageAuthorsPage.jsx')}), 
+    React.createElement(Route, {name: "manageAuthor", path: "author/:id", handler: require('./components/authors/manageAuthorsPage.jsx')}), 
     React.createElement(Route, {name: "about", handler: require('./components/about/aboutPage.jsx')}), 
     React.createElement(NotFoundRoute, {handler: require('./components/notFoundPage.jsx')}), 
     React.createElement(Redirect, {from: "about/*", to: "about"})
   )
 );
 module.exports = routes;
-},{"./components/about/aboutPage.jsx":200,"./components/app.jsx":201,"./components/authors/authorPage.jsx":204,"./components/authors/manageAuthorsPage.jsx":205,"./components/homePage.jsx":208,"./components/notFoundPage.jsx":209,"react":197,"react-router":28}]},{},[210]);
+},{"./components/about/aboutPage.jsx":201,"./components/app.jsx":202,"./components/authors/authorPage.jsx":205,"./components/authors/manageAuthorsPage.jsx":206,"./components/homePage.jsx":209,"./components/notFoundPage.jsx":210,"react":197,"react-router":28}]},{},[211]);

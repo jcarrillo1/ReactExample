@@ -29,7 +29,7 @@ var Input = React.createClass({
                         ref={this.props.name}
                         value={this.props.value}
                         onChange={this.props.onChange} />
-                    <div className='input'>{this.props.error}</div>
+                    <div className='input'>{this.props.errors}</div>
                 </div>
             </div>
         );
