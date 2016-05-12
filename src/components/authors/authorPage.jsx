@@ -1,43 +1,37 @@
 "use strict";
 
 var React = require('react'),
-    AuthorApi = require('../../api/authorApi');
+    AuthorApi = require('../../api/authorApi'),
+    AuthorList = require('./authorList.jsx'),
+    Router = require('react-router'),
+    Link = Router.Link;
 
-var Authors = React.createClass({
+var AuthorPage = React.createClass({
+
     //define initial state of the component
-    
     getInitialState: function() {
         return {
             authors: []
         };
     },
-    componentWillMount: function() {
-        this.setState({authors: AuthorApi.getAllAuthors()});
+
+    componentDidMount: function() {
+        // Check if the component is mounted
+        if(this.isMounted()) {
+            this.setState({authors: AuthorApi.getAllAuthors()});
+        }
     },
+
     render: function() {
-        var createAuthorRow = function(author) {
-            return (
-                <tr key={author.id}>
-                    <td><a href={'/#authors/' + author.id}>{author.id}</a></td>
-                    <td>{author.firstName} {author.lastName}</td>
-                </tr>
-            );
-        };
+
         return (
             <div>
                 <h1>Authors</h1>
-                <table className='table'>
-                    <thead>
-                        <th>ID</th>
-                        <th>Name</th>
-                    </thead>
-                    <tbody>
-                        {this.state.authors.map(createAuthorRow, this)}
-                    </tbody>
-                </table>
+                <Link to='addAuthor' className='btn btn-primary btn=lg'>Add Authors</Link>
+                <AuthorList authors={this.state.authors} />
             </div>
         );
     }
 });
 
-module.exports = Authors;
+module.exports = AuthorPage;

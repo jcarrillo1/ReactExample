@@ -1,21 +1,18 @@
-"use strict";
-
 var React = require('react'),
     Router = require('react-router'),
     Link = Router.Link;
 
-// Home page
-var Home = React.createClass({
+var NotFoundPage = React.createClass({
     render: function() {
         return(
             // Uses jumbotron to display the current text.
             <div className="jumbotron">
-                <h1>React Example</h1>
-                <p>Using react, reac router, and flux. </p>
-                <Link to='about' className='btn btn-primary btn=lg'>Learn More</Link>
+                <h1>Page not found</h1>
+                <p>Sorry, looks like you took a wrong turn!</p>
+                <Link to='app' className='btn btn-primary btn=lg'>Let's go back home</Link>
             </div>
         );
     }
 });
 
-module.exports = Home;
+module.exports = NotFoundPage;
