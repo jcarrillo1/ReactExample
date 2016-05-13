@@ -3,7 +3,8 @@
 var React = require('react'),
     Router = require('react-router'),
     AuthorForm = require('./authorForm.jsx'),
-    AuthorApi = require('../../api/authorApi'),
+    AuthorActions = require('../../actions/authorAction'),
+    AuthorStore = require('../../stores/authorStore'),
     toastr = require('toastr');
 
 // Home page
@@ -34,7 +35,7 @@ var AddAuthors = React.createClass({
         var authorId = this.props.params.id; //From the path, the author id
         if(authorId) {
             //Get the author from the url and use the information
-            this.setState({author:AuthorApi.getAuthorById(authorId)});
+            this.setState({author:AuthorStore.getAuthorById(authorId)});
         }
 
     },
@@ -69,8 +70,13 @@ var AddAuthors = React.createClass({
         if(!this.authorFormIsValid()) {
             return;
         }
-
-        AuthorApi.saveAuthor(this.state.author);
+        
+        if(this.state.author.id) {
+            AuthorActions.updateAuthor(this.state.author);
+        } else {
+            AuthorActions.createAuthor(this.state.author);
+        }
+        
         this.setState({dirty: false});
         toastr.success('Author has been saved');
         this.transitionTo('authors');

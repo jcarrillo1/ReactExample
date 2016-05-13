@@ -4,6 +4,8 @@ var React = require('react'),
     AuthorApi = require('../../api/authorApi'),
     AuthorList = require('./authorList.jsx'),
     Router = require('react-router'),
+    AuthorActions = require('../../actions/authorAction'),
+    AuthorStore = require('../../stores/authorStore'),
     Link = Router.Link;
 
 var AuthorPage = React.createClass({
@@ -11,15 +13,20 @@ var AuthorPage = React.createClass({
     //define initial state of the component
     getInitialState: function() {
         return {
-            authors: []
+            authors: AuthorStore.getAllAuthors()
         };
     },
-
-    componentDidMount: function() {
-        // Check if the component is mounted
-        if(this.isMounted()) {
-            this.setState({authors: AuthorApi.getAllAuthors()});
-        }
+    
+    componentWillMount: function() {
+        AuthorStore.addChangeListener(this._onChange);
+    },
+    componentWillUnmount: function() {
+        AuthorStore.removeChageListener(this._onChange);
+    },
+    
+    _onChange: function() {
+        //debugger;
+        this.setState({authors: AuthorStore.getAllAuthors()});
     },
 
     render: function() {
