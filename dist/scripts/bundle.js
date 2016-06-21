@@ -54452,9 +54452,6 @@ var Header = React.createClass({displayName: "Header",
         return(
             React.createElement("nav", {className: "navbar navbar-default"}, 
                 React.createElement("div", {className: "container-fluid"}, 
-                    React.createElement(Link, {to: "/", className: "navbar-brand"}, 
-                        React.createElement("img", {src: "images/topleft.png"})
-                    ), 
                     React.createElement("ul", {className: "nav navbar-nav"}, 
                         React.createElement("li", null, React.createElement(Link, {to: "app"}, "Home")), 
                         React.createElement("li", null, React.createElement(Link, {to: "authors"}, "Authors")), 

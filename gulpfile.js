@@ -73,16 +73,7 @@ gulp.task('css', function() {
         .pipe(concat('bundle.css'))
         .pipe(gulp.dest(config.paths.dist + '/css'));
 });
-gulp.task('images', function() {
-    //Send all files to the the dist folder under the imates folder
-    gulp.src(config.paths.images)
-        .pipe(gulp.dest(config.paths.dist + '/images'))
-        .pipe(connect.reload());
 
-    //This would be for a favicon
-    gulp.src('./src/images/topleft.png')
-        .pipe(gulp.dest(config.paths.dist));
-});
 
 //Figure out later what's wrong with the lint file or eslint
 //gulp.task('lint', function() {
@@ -103,4 +94,4 @@ gulp.task('watch', function() {
 
 //Run the tasks in this order
 //gulp.task('default', ['html', 'js', 'css', 'lint', 'open', 'watch']);
-gulp.task('default', ['html', 'js', 'css', 'images', 'open', 'watch']);
+gulp.task('default', ['html', 'js', 'css', 'open', 'watch']);
